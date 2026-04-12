@@ -1,186 +1,202 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createPageUrl } from "../lib/utils";
-import { User, ShoppingBag, CreditCard, Bell, HelpCircle, ChevronRight, LogOut, Phone, Mail, Edit2, Check, Wallet } from 'lucide-react';
+import { createPageUrl } from '../lib/utils';
+import { ShoppingBag, CreditCard, Bell, HelpCircle, ChevronRight, LogOut, Phone, Mail, Edit2, Check, Wallet, Settings } from 'lucide-react';
 import { getUser, saveUser, getOrders, getTokens, getWallet, getPin } from '../components/localData';
 import PinPad from '../components/PinPad';
+import { motion } from 'framer-motion';
 
 export default function Profile() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [orders, setOrders] = useState([]);
-  const [tokens, setTokens] = useState({ total: 0 });
-  const [wallet, setWallet] = useState({ balance: 0 });
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({});
-  const [showPin, setShowPin] = useState(false);
-  const hasPin = !!getPin();
+    const navigate = useNavigate();
+    const [user, setUser] = useState(null);
+    const [orders, setOrders] = useState([]);
+    const [tokens, setTokens] = useState({ total: 0 });
+    const [wallet, setWallet] = useState({ balance: 0 });
+    const [editing, setEditing] = useState(false);
+    const [form, setForm] = useState({});
+    const [showPin, setShowPin] = useState(false);
+    const hasPin = !!getPin();
 
-  useEffect(() => {
-    const u = getUser();
-    setUser(u);
-    setForm({ full_name: u.full_name || '', email: u.email || '', phone: u.phone || '', address: u.address || '' });
-    setOrders(getOrders());
-    setTokens(getTokens());
-    setWallet(getWallet());
-  }, []);
+    useEffect(() => {
+        const u = getUser();
+        setUser(u);
+        setForm({ full_name: u.full_name || '', email: u.email || '', phone: u.phone || '', address: u.address || '' });
+        setOrders(getOrders());
+        setTokens(getTokens());
+        setWallet(getWallet());
+    }, []);
 
-  const saveProfile = () => {
-    const updated = saveUser(form);
-    setUser(updated);
-    setEditing(false);
-  };
+    const saveProfile = () => { const updated = saveUser(form); setUser(updated); setEditing(false); };
+    const totalSpent = orders.reduce((s, o) => s + (o.total_amount || 0), 0);
+    const initials = (user?.full_name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
-  const totalSpent = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+    const menuItems = [
+        { icon: ShoppingBag, label: 'Order History', page: 'History', badge: orders.length || null, color: '#F5C518' },
+        { icon: CreditCard, label: 'Payment Methods', page: 'PaymentMethods', badge: null, color: '#6366F1' },
+        { icon: Wallet, label: 'My Wallet', page: 'WalletPage', badge: `₹${wallet.balance.toFixed(0)}`, color: '#22C55E' },
+        { icon: Bell, label: 'Notifications', page: 'Notifications', badge: null, color: '#F97316' },
+        { icon: HelpCircle, label: 'Help & Support', page: 'HelpSupport', badge: null, color: '#06B6D4' },
+    ];
 
-  const menuItems = [
-    { icon: ShoppingBag, label: 'Order History', page: 'History', count: orders.length },
-    { icon: CreditCard, label: 'Payment Methods', page: 'PaymentMethods', count: null },
-    { icon: Wallet, label: 'My Wallet', page: 'WalletPage', count: null, sub: `₹${wallet.balance.toFixed(2)}` },
-    { icon: Bell, label: 'Notifications', page: 'Notifications', count: null },
-    { icon: HelpCircle, label: 'Help & Support', page: 'HelpSupport', count: null },
-  ];
+    return (
+        <div style={{ minHeight: '100vh', background: '#080B14', paddingBottom: 40 }}>
 
-  return (
-    <div className="min-h-screen bg-black text-white pb-32">
-      <div className="px-6 pt-6 pb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Profile</h1>
-        <button onClick={() => editing ? saveProfile() : setEditing(true)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border ${editing ? 'border-green-500 text-green-400 bg-green-500/10' : 'border-gray-700 text-gray-400'}`}>
-          {editing ? <><Check className="w-4 h-4" /> Save</> : <><Edit2 className="w-4 h-4" /> Edit</>}
-        </button>
-      </div>
-
-      {/* User Card */}
-      <div className="px-6">
-        <div className="bg-gray-900 rounded-3xl p-6 border border-yellow-400/30">
-          <div className="flex items-center gap-4 mb-5">
-            <div className="w-16 h-16 bg-yellow-400 rounded-2xl flex items-center justify-center flex-shrink-0">
-              <User className="w-8 h-8 text-black" />
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 16px' }}>
+                <h1 style={{ fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: '-0.4px' }}>Profile</h1>
+                <button
+                    onClick={() => editing ? saveProfile() : setEditing(true)}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 12,
+                        background: editing ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)',
+                        border: `1px solid ${editing ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                        color: editing ? '#22C55E' : 'rgba(255,255,255,0.55)', fontSize: 13, fontWeight: 600,
+                        cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                    }}>
+                    {editing ? <><Check size={14} /> Save</> : <><Edit2 size={14} /> Edit</>}
+                </button>
             </div>
-            <div className="flex-1 min-w-0">
-              {editing ? (
-                <input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
-                  className="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-white text-sm outline-none mb-1" placeholder="Full Name" />
-              ) : (
-                <h2 className="text-xl font-bold truncate">{user?.full_name || 'Guest User'}</h2>
-              )}
-              <p className="text-gray-400 text-sm truncate">{user?.email || 'guest@stickypay.app'}</p>
-            </div>
-          </div>
 
-          {/* Detail fields */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 bg-black/30 rounded-xl px-4 py-3">
-              <Phone className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-              {editing ? (
-                <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                  className="flex-1 bg-transparent text-white text-sm outline-none" placeholder="Mobile number" />
-              ) : (
-                <span className="text-sm text-gray-300">{user?.phone || 'Add mobile number'}</span>
-              )}
-            </div>
-            <div className="flex items-center gap-3 bg-black/30 rounded-xl px-4 py-3">
-              <Mail className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-              {editing ? (
-                <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  className="flex-1 bg-transparent text-white text-sm outline-none" placeholder="Email" />
-              ) : (
-                <span className="text-sm text-gray-300">{user?.email || 'Add email'}</span>
-              )}
-            </div>
-            {editing && (
-              <div className="flex items-center gap-3 bg-black/30 rounded-xl px-4 py-3">
-                <span className="text-yellow-400 text-sm flex-shrink-0">📍</span>
-                <input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                  className="flex-1 bg-transparent text-white text-sm outline-none" placeholder="Address" />
-              </div>
-            )}
-            {!editing && user?.address && (
-              <div className="flex items-center gap-3 bg-black/30 rounded-xl px-4 py-3">
-                <span className="text-yellow-400 text-sm">📍</span>
-                <span className="text-sm text-gray-300">{user.address}</span>
-              </div>
-            )}
-          </div>
+            {/* User Card */}
+            <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                style={{ padding: '0 16px 16px' }}>
+                <div style={{
+                    borderRadius: 24, padding: '24px 20px',
+                    background: 'linear-gradient(135deg, rgba(245,197,24,0.1) 0%, rgba(34,197,94,0.08) 100%)',
+                    border: '1px solid rgba(245,197,24,0.2)',
+                    position: 'relative', overflow: 'hidden',
+                }}>
+                    {/* BG decoration */}
+                    <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(245,197,24,0.06)' }} />
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            <div className="bg-black/30 rounded-xl p-3 text-center">
-              <p className="text-xl font-bold text-yellow-400">{orders.length}</p>
-              <p className="text-gray-400 text-xs">Orders</p>
-            </div>
-            <div className="bg-black/30 rounded-xl p-3 text-center">
-              <p className="text-xl font-bold text-green-500">₹{totalSpent.toFixed(0)}</p>
-              <p className="text-gray-400 text-xs">Spent</p>
-            </div>
-            <div className="bg-black/30 rounded-xl p-3 text-center">
-              <p className="text-xl font-bold text-yellow-400">🪙 {tokens.total.toFixed(1)}</p>
-              <p className="text-gray-400 text-xs">Coins</p>
-            </div>
-          </div>
-        </div>
-      </div>
+                    {/* Avatar + Name */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                        <div style={{
+                            width: 64, height: 64, borderRadius: 20, flexShrink: 0,
+                            background: 'linear-gradient(135deg, #F5C518, #22C55E)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            boxShadow: '0 8px 20px rgba(245,197,24,0.3)',
+                        }}>
+                            <span style={{ fontWeight: 900, fontSize: 22, color: '#000' }}>{initials}</span>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            {editing ? (
+                                <input value={form.full_name}
+                                    onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
+                                    style={{ width: '100%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: '8px 12px', color: '#fff', fontSize: 16, fontWeight: 700, outline: 'none', fontFamily: 'Inter, sans-serif', marginBottom: 4 }} />
+                            ) : (
+                                <h2 style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 3 }}>{user?.full_name || 'Guest User'}</h2>
+                            )}
+                            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>{user?.email || 'No email set'}</p>
+                        </div>
+                    </div>
 
-      {/* StickyCoins Banner */}
-      {tokens.total > 0 && (
-        <div className="px-6 mt-4">
-          <div className="bg-gradient-to-r from-yellow-400/20 to-green-500/20 border border-yellow-400/30 rounded-2xl p-4 flex items-center gap-3">
-            <span className="text-3xl">🪙</span>
-            <div>
-              <p className="font-bold text-yellow-400">{tokens.total.toFixed(2)} StickyCoins</p>
-              <p className="text-gray-400 text-xs">Worth ₹{tokens.total.toFixed(2)} · Use at checkout</p>
-            </div>
-          </div>
-        </div>
-      )}
+                    {/* Contact Fields */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {[
+                            { Icon: Phone, key: 'phone', color: '#F5C518', placeholder: 'Mobile Number' },
+                            { Icon: Mail, key: 'email', color: '#6366F1', placeholder: 'Email Address' },
+                        ].map(({ Icon, key, color, placeholder }) => (
+                            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '10px 14px' }}>
+                                <Icon size={15} color={color} />
+                                {editing ? (
+                                    <input value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                                        style={{ flex: 1, background: 'none', border: 'none', color: '#fff', fontSize: 13, outline: 'none', fontFamily: 'Inter, sans-serif' }}
+                                        placeholder={placeholder} />
+                                ) : (
+                                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>{user?.[key] || `Add ${placeholder.toLowerCase()}`}</span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
 
-      {/* Menu Items */}
-      <div className="px-6 mt-6 space-y-2">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button key={item.label} onClick={() => navigate(createPageUrl(item.page))}
-              className="w-full flex items-center justify-between p-4 bg-gray-900 rounded-xl border border-gray-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center">
-                  <Icon className="w-5 h-5 text-yellow-400" />
+                    {/* Stats */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginTop: 16 }}>
+                        {[
+                            { val: orders.length, label: 'Orders', color: '#F5C518' },
+                            { val: `₹${totalSpent.toFixed(0)}`, label: 'Spent', color: '#22C55E' },
+                            { val: `🪙 ${tokens.total.toFixed(0)}`, label: 'Coins', color: '#F5C518' },
+                        ].map(s => (
+                            <div key={s.label} style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 14, padding: '12px 8px', textAlign: 'center' }}>
+                                <p style={{ fontWeight: 800, fontSize: 18, color: s.color }}>{s.val}</p>
+                                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{s.label}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-                <span className="font-medium">{item.label}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {item.sub && <span className="text-green-400 text-sm font-semibold">{item.sub}</span>}
-                {item.count !== null && item.count > 0 && (
-                  <span className="bg-yellow-400/20 text-yellow-400 text-xs font-bold px-2 py-1 rounded-full">{item.count}</span>
-                )}
-                <ChevronRight className="w-5 h-5 text-gray-600" />
-              </div>
-            </button>
-          );
-        })}
-      </div>
+            </motion.div>
 
-      {/* Logout */}
-      <div className="px-6 mt-4">
-        <button onClick={() => setShowPin(true)}
-          className="w-full flex items-center justify-center gap-2 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 font-medium">
-          <LogOut className="w-4 h-4" />
-          Log Out
-        </button>
-      </div>
+            {/* StickyCoins banner */}
+            {tokens.total > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    style={{ padding: '0 16px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.2)', borderRadius: 18, padding: '14px 16px' }}>
+                        <span style={{ fontSize: 30 }}>🪙</span>
+                        <div>
+                            <p style={{ fontWeight: 700, color: '#F5C518', fontSize: 14 }}>{tokens.total.toFixed(2)} StickyCoins</p>
+                            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>Worth ₹{tokens.total.toFixed(2)} · Use at checkout</p>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
 
-      {showPin && (
-        <PinPad
-          title={hasPin ? 'Enter PIN to Log Out' : 'Set PIN to Continue'}
-          isSetup={!hasPin}
-          onSuccess={() => {
-            setShowPin(false);
-            localStorage.clear();
-            navigate('/Login');
-          }}
-          onCancel={() => setShowPin(false)}
-        />
-      )}
-    </div>
-  );
+            {/* Menu Items */}
+            <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {menuItems.map((item, i) => {
+                    const Icon = item.icon;
+                    return (
+                        <motion.button
+                            key={item.label}
+                            initial={{ opacity: 0, x: -16 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.05 * i }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => navigate(createPageUrl(item.page))}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', width: '100%', fontFamily: 'Inter, sans-serif' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ width: 38, height: 38, borderRadius: 12, background: `${item.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Icon size={17} color={item.color} />
+                                </div>
+                                <span style={{ fontWeight: 600, fontSize: 14, color: '#fff' }}>{item.label}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                {item.badge && (
+                                    <span style={{
+                                        fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 100,
+                                        background: typeof item.badge === 'number' ? 'rgba(245,197,24,0.15)' : 'rgba(34,197,94,0.15)',
+                                        color: typeof item.badge === 'number' ? '#F5C518' : '#22C55E',
+                                    }}>{item.badge}</span>
+                                )}
+                                <ChevronRight size={16} color="rgba(255,255,255,0.2)" />
+                            </div>
+                        </motion.button>
+                    );
+                })}
+            </div>
+
+            {/* Logout */}
+            <div style={{ padding: '16px 16px 0' }}>
+                <button
+                    onClick={() => setShowPin(true)}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '15px', borderRadius: 18, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#EF4444', fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    <LogOut size={16} />
+                    Log Out
+                </button>
+            </div>
+
+            {showPin && (
+                <PinPad
+                    title={hasPin ? 'Enter PIN to Log Out' : 'Set PIN to Continue'}
+                    isSetup={!hasPin}
+                    onSuccess={() => { setShowPin(false); localStorage.clear(); navigate('/Login'); }}
+                    onCancel={() => setShowPin(false)}
+                />
+            )}
+        </div>
+    );
 }

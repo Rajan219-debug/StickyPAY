@@ -8,110 +8,82 @@ export default function Layout({ children, currentPageName }) {
         const updateCartCount = () => {
             try {
                 const saved = localStorage.getItem('stickyPayCart');
-
-                if (!saved) {
-                    setCartCount(0);
-                    return;
-                }
-
+                if (!saved) { setCartCount(0); return; }
                 const data = JSON.parse(saved);
-
-                // Extra safety
-                if (!data || !Array.isArray(data.items)) {
-                    setCartCount(0);
-                    return;
-                }
-
-                const count = data.items.reduce(
-                    (sum, item) => sum + (item.quantity || 0),
-                    0
-                );
-
+                if (!data || !Array.isArray(data.items)) { setCartCount(0); return; }
+                const count = data.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
                 setCartCount(count);
-            } catch (error) {
-                console.error("Cart parse error:", error);
-                setCartCount(0);
-            }
+            } catch { setCartCount(0); }
         };
 
         updateCartCount();
-
         window.addEventListener('storage', updateCartCount);
-
         const interval = setInterval(updateCartCount, 1000);
-
-        return () => {
-            window.removeEventListener('storage', updateCartCount);
-            clearInterval(interval);
-        };
+        return () => { window.removeEventListener('storage', updateCartCount); clearInterval(interval); };
     }, []);
 
+    const isLogin = currentPageName === 'Login';
+
     return (
-        <div className="min-h-screen bg-black">
-
-            {/* Top Logo */}
-            <div className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-lg border-b border-gray-800/50">
-                <div className="flex items-center justify-center py-3 w-full px-4">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-400 to-green-500 flex items-center justify-center">
-                            <span className="text-black font-bold text-sm">S</span>
-                        </div>
-                        <h1 className="text-xl font-bold text-white">
-                            Sticky<span className="text-yellow-400">PAY</span>
-                        </h1>
-                    </div>
-                </div>
-            </div>
-
+        <div style={{ background: '#080B14', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
             <style>{`
                 :root {
-                    --background: 0 0% 0%;
-                    --foreground: 0 0% 100%;
-                    --card: 0 0% 7%;
-                    --card-foreground: 0 0% 100%;
-                    --primary: 50 100% 50%;
+                    --background: 222 47% 5%;
+                    --foreground: 0 0% 98%;
+                    --card: 222 47% 7%;
+                    --card-foreground: 0 0% 98%;
+                    --primary: 48 96% 53%;
                     --primary-foreground: 0 0% 0%;
                     --secondary: 142 76% 36%;
                     --secondary-foreground: 0 0% 100%;
-                    --muted: 0 0% 15%;
-                    --muted-foreground: 0 0% 60%;
-                    --accent: 50 100% 50%;
+                    --muted: 222 30% 12%;
+                    --muted-foreground: 0 0% 55%;
+                    --accent: 48 96% 53%;
                     --accent-foreground: 0 0% 0%;
-                    --border: 0 0% 20%;
-                    --input: 0 0% 15%;
-                    --ring: 50 100% 50%;
+                    --border: 222 30% 12%;
+                    --input: 222 30% 10%;
+                    --ring: 48 96% 53%;
+                    --radius: 1rem;
                 }
-
-                body {
-                    background-color: black;
-                    color: white;
-                }
-
-                * {
-                    scrollbar-width: thin;
-                    scrollbar-color: #333 transparent;
-                }
-
-                *::-webkit-scrollbar {
-                    width: 6px;
-                }
-
-                *::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-
-                *::-webkit-scrollbar-thumb {
-                    background-color: #333;
-                    border-radius: 3px;
-                }
+                html, body { background: #080B14 !important; }
             `}</style>
 
-            <div className={`pt-14 w-full relative min-h-screen ${currentPageName !== "Login" ? "pb-24" : ""}`}>
+            {/* Top Bar */}
+            {!isLogin && (
+                <div className="fixed top-0 left-0 right-0 z-50"
+                    style={{ background: 'rgba(8,11,20,0.85)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="flex items-center justify-between py-4 px-5 max-w-md mx-auto">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl flex items-center justify-center animate-pulse-glow"
+                                style={{ background: 'linear-gradient(135deg, #F5C518, #22C55E)' }}>
+                                <span style={{ color: '#000', fontWeight: 900, fontSize: 14 }}>S</span>
+                            </div>
+                            <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>
+                                Sticky<span style={{ color: '#F5C518' }}>PAY</span>
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer"
+                                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                                    </svg>
+                                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center"
+                                        style={{ background: '#F5C518', fontSize: 7, fontWeight: 800, color: '#000' }}>1</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className={`w-full relative ${!isLogin ? 'pt-16 pb-28' : ''}`}>
                 {children}
             </div>
-            {currentPageName !== "Login" && (
-                <BottomNav cartCount={cartCount} />
-            )}    
+
+            {!isLogin && <BottomNav cartCount={cartCount} />}
         </div>
     );
 }

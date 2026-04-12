@@ -1,272 +1,295 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createPageUrl } from "../lib/utils";
-import { ScanLine, ArrowRight, Sparkles, Tag, Copy, Check, Store, TrendingUp, History } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { createPageUrl } from '../lib/utils';
+import { ScanLine, ArrowRight, Store, History, Copy, Check, Tag, ChevronRight } from 'lucide-react';
 import { getUser, getOrders } from '../components/localData';
 import { motion, AnimatePresence } from 'framer-motion';
-import { StoreContext } from "@/lib/StoreContext";
+import { StoreContext } from '@/lib/StoreContext';
 
 const ALL_OFFERS = [
-  { code: 'SAVE10', title: '10% Off', desc: 'Get 10% off on orders above ₹500', min: 500, type: 'percent', value: 10, store: 'All Stores', color: 'from-yellow-400 to-orange-400', storeKey: null },
-  { code: 'NEWUSER', title: '₹50 Off', desc: 'Flat ₹50 off for new users on first order', min: 200, type: 'flat', value: 50, store: 'All Stores', color: 'from-green-400 to-teal-500', storeKey: null },
-  { code: 'UPI5', title: '5% Cashback', desc: '5% cashback when you pay via UPI', min: 100, type: 'cashback', value: 5, store: 'All Stores', color: 'from-blue-400 to-purple-500', storeKey: null },
-  { code: 'WEEKEND20', title: '20% Off', desc: 'Weekend special — 20% off every Saturday & Sunday', min: 300, type: 'percent', value: 20, store: 'Demo Store', color: 'from-pink-400 to-rose-500', storeKey: 'Demo Store' },
-  { code: 'GROCERY15', title: '15% Off', desc: '15% off on all grocery items', min: 250, type: 'percent', value: 15, store: 'Demo Store', color: 'from-lime-400 to-green-500', storeKey: 'Demo Store' },
-  { code: 'FRESH25', title: '25% Off', desc: 'Fresh produce discount - fruits & vegetables', min: 150, type: 'percent', value: 25, store: 'FreshMart', color: 'from-emerald-400 to-cyan-500', storeKey: 'FreshMart' },
-  { code: 'DAILY5', title: '₹5 Off', desc: 'Daily shopper reward on every visit', min: 50, type: 'flat', value: 5, store: 'All Stores', color: 'from-violet-400 to-indigo-500', storeKey: null },
+    { code: 'SAVE10', title: '10% Off', desc: 'Orders above ₹500', color: ['#F5C518', '#F97316'], storeKey: null },
+    { code: 'NEWUSER', title: '₹50 Off', desc: 'First order flat discount', color: ['#22C55E', '#06B6D4'], storeKey: null },
+    { code: 'UPI5', title: '5% Cashback', desc: 'Pay via UPI', color: ['#6366F1', '#8B5CF6'], storeKey: null },
+    { code: 'WEEKEND20', title: '20% Off', desc: 'Weekend special', color: ['#EC4899', '#EF4444'], storeKey: 'Demo Store' },
 ];
 
 export default function Home() {
-  const navigate = useNavigate();
-  const { activeStore: currentStore } = useContext(StoreContext);
-  const [greeting, setGreeting] = useState('');
-  const [user, setUser] = useState(null);
-  const [orders, setOrders] = useState([]);
-  const [copied, setCopied] = useState('');
+    const navigate = useNavigate();
+    const { activeStore: currentStore } = useContext(StoreContext);
+    const [greeting, setGreeting] = useState('');
+    const [user, setUser] = useState(null);
+    const [orders, setOrders] = useState([]);
+    const [copied, setCopied] = useState('');
 
-  useEffect(() => {
-    const u = getUser();
-    if (!u || !u.full_name) {
-      navigate(createPageUrl('Login'));
-      return;
-    }
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting('Good Morning');
-    else if (hour < 18) setGreeting('Good Afternoon');
-    else setGreeting('Good Evening');
-    setUser(u);
-    setOrders(getOrders());
-  }, [navigate]);
+    useEffect(() => {
+        const u = getUser();
+        if (!u?.full_name) { navigate(createPageUrl('Login')); return; }
+        const h = new Date().getHours();
+        setGreeting(h < 12 ? 'Good Morning' : h < 18 ? 'Good Afternoon' : 'Good Evening');
+        setUser(u);
+        setOrders(getOrders());
+    }, [navigate]);
 
-  const copy = (code) => {
-    navigator.clipboard.writeText(code).catch(() => { });
-    setCopied(code);
-    setTimeout(() => setCopied(''), 2000);
-  };
+    const copy = (code) => {
+        navigator.clipboard.writeText(code).catch(() => { });
+        setCopied(code);
+        setTimeout(() => setCopied(''), 2000);
+    };
 
-  // Filter offers: if store active, show store-specific + all stores; else show all
-  const visibleOffers = currentStore
-    ? ALL_OFFERS.filter(o => !o.storeKey || o.storeKey === currentStore.name)
-    : ALL_OFFERS;
+    const visibleOffers = currentStore
+        ? ALL_OFFERS.filter(o => !o.storeKey || o.storeKey === currentStore.name)
+        : ALL_OFFERS;
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.08 } }
-  };
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } }
-  };
+    const totalSpent = orders.reduce((s, o) => s + (o.total_amount || 0), 0);
 
-  return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="px-6 pt-6 pb-4"
-      >
-        <p className="text-gray-400 text-sm">{greeting}</p>
-        <h1 className="text-3xl font-bold mt-1">{user?.full_name?.split(' ')[0] || 'Shopper'} 👋</h1>
-      </motion.div>
+    return (
+        <div style={{ minHeight: '100vh', background: '#080B14', paddingBottom: 40 }}>
 
-      {/* Main Action Card */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.97 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.45, delay: 0.1 }}
-        className="px-6"
-      >
-        <Link to={createPageUrl('Scanner')} className="block">
-          <div className="bg-gradient-to-br from-yellow-400 via-yellow-500 to-green-500 rounded-3xl p-6 relative overflow-hidden group active:scale-[0.98] transition-transform duration-200 cursor-pointer">
-            <div className="absolute top-0 right-0 w-36 h-36 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2 group-hover:scale-125 transition-transform duration-500" />
-            <div className="relative z-10">
-              <h2 className="text-black text-2xl font-bold mb-2">{currentStore ? 'Scan Items' : 'Start Shopping'}</h2>
-              <p className="text-black/70 mb-5 text-sm">
-                {currentStore ? `Scan products at ${currentStore.name}` : 'Scan store QR to begin seamless checkout'}
-              </p>
-              <div className="inline-flex items-center gap-2 bg-black text-yellow-400 font-semibold px-5 py-3 rounded-xl text-sm group-hover:gap-3 transition-all duration-300">
-                <ScanLine className="w-4 h-4" />
-                {currentStore ? 'Scan Barcode' : 'Scan Store QR'}
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-        </Link>
-      </motion.div>
-
-      {/* Active Store Badge */}
-      <AnimatePresence>
-        {currentStore && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
-            exit={{ opacity: 0, height: 0 }}
-            className="px-6"
-          >
-            <div className="bg-yellow-400/10 border border-yellow-400/40 rounded-2xl px-4 py-3 flex items-center gap-3">
-              <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Store className="w-4 h-4 text-black" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-400">Currently shopping at</p>
-                <p className="text-sm font-bold text-yellow-400">{currentStore.name}</p>
-              </div>
-              <div className="ml-auto">
-                <span className="text-xs bg-yellow-400/20 text-yellow-400 px-2 py-1 rounded-lg font-medium">Active</span>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Quick Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
-        className="px-6 mt-5"
-      >
-        <div className="grid grid-cols-2 gap-4">
-          <motion.div
-            whileHover={{ scale: 1.03, y: -2 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate(createPageUrl('History'))}
-            className="bg-gray-900 rounded-2xl p-4 border border-gray-800 cursor-pointer active:bg-gray-800 transition-colors"
-          >
-            <div className="w-9 h-9 bg-yellow-400/20 rounded-xl flex items-center justify-center mb-2">
-              <Sparkles className="w-4 h-4 text-yellow-400" />
-            </div>
-            <p className="text-2xl font-bold">{orders.length}</p>
-            <p className="text-gray-500 text-sm">Total Orders</p>
-          </motion.div>
-          <motion.div
-            whileHover={{ scale: 1.03, y: -2 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate(createPageUrl('Scanner'))}
-            className="bg-gray-900 rounded-2xl p-4 border border-gray-800 cursor-pointer active:bg-gray-800 transition-colors"
-          >
-            <div className="w-9 h-9 bg-green-500/20 rounded-xl flex items-center justify-center mb-2">
-              <TrendingUp className="w-4 h-4 text-green-500" />
-            </div>
-            <p className="text-2xl font-bold">Fast</p>
-            <p className="text-gray-500 text-sm">Checkout</p>
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* Recent Activity Section */}
-      {orders.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="px-6 mt-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold flex items-center gap-2">
-              <History className="w-5 h-5 text-yellow-400" /> Recent Activity
-            </h3>
-            <button
-              onClick={() => navigate(createPageUrl('History'))}
-              className="text-yellow-400 text-xs font-medium flex items-center gap-1"
+            {/* Top greeting */}
+            <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                style={{ padding: '20px 20px 12px' }}
             >
-              See All <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-          <div className="space-y-3">
-            {orders.slice(0, 3).map((order) => (
-              <div key={order.id} className="bg-gray-900 rounded-2xl p-4 border border-gray-800 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-yellow-400/10 rounded-xl flex items-center justify-center">
-                    <Store className="w-5 h-5 text-yellow-400" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-sm">{order.store_name || 'Store'}</h4>
-                    <p className="text-gray-500 text-xs mt-0.5">{order.created_date ? new Date(order.created_date).toLocaleDateString() : 'Unknown date'}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-white">₹{Number(order.total_amount || 0).toFixed(2)}</p>
-                  <p className="text-green-500 text-xs font-medium flex items-center gap-1 justify-end">
-                    <Check className="w-3 h-3" /> Paid
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 4 }}>{greeting} 👋</p>
+                <h1 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>
+                    {user?.full_name?.split(' ')[0] || 'Shopper'}
+                </h1>
+            </motion.div>
 
-      {/* Offers Section */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="px-6 mt-6 pb-10"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Tag className="w-5 h-5 text-yellow-400" />
-            <h3 className="text-base font-semibold">
-              {currentStore ? `Offers at ${currentStore.name}` : 'Available Offers'}
-            </h3>
-          </div>
-          <motion.button
-            whileHover={{ x: 2 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate(createPageUrl('Offers'))}
-            className="text-yellow-400 text-xs font-medium flex items-center gap-1"
-          >
-            View All <ArrowRight className="w-3 h-3" />
-          </motion.button>
-        </div>
+            {/* Main Hero Scan Card */}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                style={{ padding: '0 16px 0' }}
+            >
+                <Link to={createPageUrl('Scanner')} style={{ display: 'block' }}>
+                    <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="shimmer"
+                        style={{
+                            borderRadius: 24,
+                            background: 'linear-gradient(135deg, #F5C518 0%, #e6ab00 40%, #22C55E 100%)',
+                            padding: '28px 24px',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            boxShadow: '0 8px 32px rgba(245,197,24,0.25)',
+                        }}>
+                        {/* Decorative circles */}
+                        <div style={{
+                            position: 'absolute', top: -40, right: -40, width: 150, height: 150,
+                            borderRadius: '50%', background: 'rgba(255,255,255,0.12)',
+                        }} />
+                        <div style={{
+                            position: 'absolute', bottom: -30, left: -20, width: 100, height: 100,
+                            borderRadius: '50%', background: 'rgba(0,0,0,0.08)',
+                        }} />
+                        <div style={{ position: 'relative', zIndex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+                                <div>
+                                    <p style={{ color: 'rgba(0,0,0,0.6)', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                                        {currentStore ? `Shopping at ${currentStore.name}` : 'Self-Checkout'}
+                                    </p>
+                                    <h2 style={{ fontSize: 24, fontWeight: 800, color: '#000', letterSpacing: '-0.5px' }}>
+                                        {currentStore ? 'Scan Items' : 'Start Shopping'}
+                                    </h2>
+                                    <p style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 4 }}>
+                                        {currentStore ? 'Scan barcodes to add to cart' : 'Scan store QR to begin'}
+                                    </p>
+                                </div>
+                                <div style={{
+                                    width: 48, height: 48, borderRadius: 16, background: 'rgba(0,0,0,0.15)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}>
+                                    <ScanLine size={24} color="#000" strokeWidth={2.5} />
+                                </div>
+                            </div>
+                            <div style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 8,
+                                background: '#000', borderRadius: 12, padding: '10px 18px',
+                            }}>
+                                <ScanLine size={15} color="#F5C518" />
+                                <span style={{ color: '#F5C518', fontSize: 13, fontWeight: 700 }}>
+                                    {currentStore ? 'Scan Barcode' : 'Scan Store QR'}
+                                </span>
+                                <ArrowRight size={14} color="#F5C518" />
+                            </div>
+                        </div>
+                    </motion.div>
+                </Link>
+            </motion.div>
 
-        <div className="space-y-3">
-          <AnimatePresence>
-            {visibleOffers.map((offer, i) => (
-              <motion.div
-                key={offer.code}
-                variants={itemVariants}
-                whileHover={{ scale: 1.015, y: -2 }}
-                className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden"
-              >
-                <div className={`h-1.5 bg-gradient-to-r ${offer.color}`} />
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-bold text-base">{offer.title}</span>
-                        {offer.storeKey === currentStore?.name && (
-                          <span className="text-xs bg-yellow-400/20 text-yellow-400 px-2 py-0.5 rounded-full font-medium">Store Deal</span>
-                        )}
-                      </div>
-                      <p className="text-gray-400 text-sm">{offer.desc}</p>
-                      <p className="text-gray-600 text-xs mt-1.5">Min. ₹{offer.min} · {offer.store}</p>
+            {/* Active Store Badge */}
+            <AnimatePresence>
+                {currentStore && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        style={{ padding: '12px 16px 0' }}>
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            background: 'rgba(245,197,24,0.08)',
+                            border: '1px solid rgba(245,197,24,0.2)',
+                            borderRadius: 16, padding: '12px 16px',
+                        }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(245,197,24,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <Store size={17} color="#F5C518" />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11 }}>Currently shopping at</p>
+                                <p style={{ color: '#F5C518', fontWeight: 700, fontSize: 14 }}>{currentStore.name}</p>
+                            </div>
+                            <span style={{ background: 'rgba(34,197,94,0.2)', color: '#22C55E', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8 }}>LIVE</span>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Stats Row */}
+            <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, padding: '16px 16px 0' }}
+            >
+                {[
+                    { label: 'Orders', value: orders.length, color: '#F5C518' },
+                    { label: 'Spent', value: `₹${totalSpent.toFixed(0)}`, color: '#22C55E' },
+                    { label: 'Fast Pay', value: 'UPI', color: '#6366F1' },
+                ].map((stat, i) => (
+                    <motion.div
+                        key={stat.label}
+                        whileTap={{ scale: 0.96 }}
+                        style={{
+                            background: 'rgba(255,255,255,0.04)',
+                            border: '1px solid rgba(255,255,255,0.07)',
+                            borderRadius: 18, padding: '14px 12px', textAlign: 'center', cursor: 'pointer',
+                        }}>
+                        <p style={{ fontSize: 20, fontWeight: 800, color: stat.color }}>{stat.value}</p>
+                        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{stat.label}</p>
+                    </motion.div>
+                ))}
+            </motion.div>
+
+            {/* Recent Orders */}
+            {orders.length > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                    style={{ padding: '20px 16px 0' }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <History size={16} color="#F5C518" />
+                            <span style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>Recent Transactions</span>
+                        </div>
+                        <button onClick={() => navigate(createPageUrl('History'))}
+                            style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#F5C518', fontSize: 12, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>
+                            See All <ChevronRight size={13} />
+                        </button>
                     </div>
-                  </div>
-                  <motion.button
-                    whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => copy(offer.code)}
-                    className="mt-3 w-full flex items-center justify-between bg-gray-800 border border-dashed border-gray-600 rounded-xl px-4 py-3 transition-colors"
-                  >
-                    <span className="font-mono font-bold text-yellow-400 tracking-widest text-sm">{offer.code}</span>
-                    <span className="flex items-center gap-1 text-xs text-gray-400">
-                      {copied === offer.code
-                        ? <><Check className="w-4 h-4 text-green-400" /><span className="text-green-400">Copied!</span></>
-                        : <><Copy className="w-4 h-4" />Copy</>}
-                    </span>
-                  </motion.button>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {orders.slice(0, 3).map((order, i) => {
+                            const initial = (order.store_name || 'S').charAt(0).toUpperCase();
+                            const colors = ['#F5C518', '#22C55E', '#6366F1'];
+                            return (
+                                <motion.div
+                                    key={order.id || i}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.05 * i }}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 12,
+                                        background: 'rgba(255,255,255,0.04)',
+                                        border: '1px solid rgba(255,255,255,0.06)',
+                                        borderRadius: 16, padding: '12px 14px',
+                                    }}>
+                                    <div style={{
+                                        width: 42, height: 42, borderRadius: 14, flexShrink: 0,
+                                        background: `${colors[i % 3]}20`,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                        <span style={{ fontWeight: 800, fontSize: 16, color: colors[i % 3] }}>{initial}</span>
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <p style={{ fontWeight: 600, fontSize: 14, color: '#fff', marginBottom: 2 }}>{order.store_name || 'Store'}</p>
+                                        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
+                                            {order.created_date ? new Date(order.created_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : 'Today'}
+                                        </p>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <p style={{ fontWeight: 700, fontSize: 15, color: '#22C55E' }}>-₹{Number(order.total_amount || 0).toFixed(2)}</p>
+                                        <p style={{ fontSize: 10, color: '#22C55E', fontWeight: 600 }}>Paid</p>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                </motion.div>
+            )}
+
+            {/* Offers */}
+            <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+                style={{ padding: '20px 16px 0' }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Tag size={16} color="#F5C518" />
+                        <span style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>Offers for You</span>
+                    </div>
+                    <button onClick={() => navigate(createPageUrl('Offers'))}
+                        style={{ color: '#F5C518', fontSize: 12, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        View All <ChevronRight size={13} />
+                    </button>
                 </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+
+                {/* Horizontal scroll offers */}
+                <div style={{ display: 'flex', overflowX: 'auto', gap: 12, paddingBottom: 8, scrollbarWidth: 'none' }}>
+                    {visibleOffers.map((offer, i) => (
+                        <motion.div
+                            key={offer.code}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.05 * i }}
+                            whileHover={{ scale: 1.03 }}
+                            style={{
+                                flexShrink: 0, width: 200, borderRadius: 20,
+                                background: `linear-gradient(135deg, ${offer.color[0]}18, ${offer.color[1]}12)`,
+                                border: `1px solid ${offer.color[0]}25`,
+                                padding: '16px 14px', cursor: 'pointer',
+                            }}>
+                            <div style={{
+                                display: 'inline-block', padding: '4px 10px', borderRadius: 8, marginBottom: 10,
+                                background: `linear-gradient(135deg, ${offer.color[0]}, ${offer.color[1]})`,
+                            }}>
+                                <span style={{ fontSize: 12, fontWeight: 800, color: '#000' }}>{offer.title}</span>
+                            </div>
+                            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: 12, lineHeight: 1.4 }}>{offer.desc}</p>
+                            <button
+                                onClick={() => copy(offer.code)}
+                                style={{
+                                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    background: 'rgba(255,255,255,0.06)', border: '1px dashed rgba(255,255,255,0.15)',
+                                    borderRadius: 10, padding: '8px 10px', cursor: 'pointer',
+                                }}>
+                                <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 800, color: offer.color[0], letterSpacing: 2 }}>{offer.code}</span>
+                                {copied === offer.code
+                                    ? <Check size={14} color="#22C55E" />
+                                    : <Copy size={14} color="rgba(255,255,255,0.3)" />}
+                            </button>
+                        </motion.div>
+                    ))}
+                </div>
+            </motion.div>
         </div>
-      </motion.div>
-    </div>
-  );
+    );
 }
